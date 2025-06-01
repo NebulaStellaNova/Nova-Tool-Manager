@@ -36,6 +36,14 @@
                     "latest": "v0.1.0",
                     "description": "CNE Style HScript based scripting.",
                     "download": "https://codeload.github.com/NebulaStellaNova/Nova-CNE-V-Slice/zip/refs/heads/main"
+                },
+                {
+                    "name": "LuAxe Parser",
+                    "icon": "luaxe",
+                    "latest": "v0.1.0",
+                    "description": "LuAxe (Lua-Haxe) based scripting.",
+                    "comingSoon": true,
+                    "download": "https://codeload.github.com/NebulaStellaNova/Nova-CNE-V-Slice/zip/refs/heads/main"
                 }
             ]
         },
