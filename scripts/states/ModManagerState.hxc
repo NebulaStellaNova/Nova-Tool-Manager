@@ -164,7 +164,7 @@ class NovaDownloaderState extends MusicBeatState {
 		}
 
         stateData = parseJsonFile(currentFolder + "/data/toolList.json");
-        for (category in stateData) {
+        for (category in stateData.categories) {
             for (i in category.items) {
                 items.push(i);
             }
@@ -203,7 +203,7 @@ class NovaDownloaderState extends MusicBeatState {
         fileMenu.addComponent(exitToMenu);
 
 
-        var novaSprite = new FunkinSprite().loadGraphic(Paths.image("ui/novaUtilsFull"));
+        var novaSprite = new FunkinSprite().loadGraphic(Paths.image("ui/" + stateData.titleImage));
         novaSprite.scale.set(0.2, 0.2);
         novaSprite.updateHitbox();
         novaSprite.screenCenter();
@@ -211,7 +211,7 @@ class NovaDownloaderState extends MusicBeatState {
         add(novaSprite);
 
         var index = 0;
-        for (category in stateData) {
+        for (category in stateData.categories) {
             var catText = new FlxText();
             catText.text = category.title;
             catText.setFormat(Paths.font('Tardling v1.1.ttf'));
