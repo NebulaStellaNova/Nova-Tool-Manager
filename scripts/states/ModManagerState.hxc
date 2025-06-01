@@ -1,0 +1,343 @@
+import StringTools;
+
+import haxe.ui.RuntimeComponentBuilder;
+import flixel.FlxG;
+import flixel.text.FlxTextBorderStyle;
+import haxe.ui.backend.flixel.UIState;
+import flixel.util.FlxSave;
+import flixel.FlxSprite;
+import haxe.Json;
+import funkin.graphics.FunkinSprite;
+
+import haxe.ui.core.Component;
+import haxe.ui.core.TextDisplay;
+
+import haxe.ui.components.Link;
+import haxe.ui.components.Label;
+import haxe.ui.components.Image;
+import haxe.ui.components.Button;
+import haxe.ui.components.TabBar;
+import haxe.ui.components.Column;
+import haxe.ui.components.TextArea;
+import haxe.ui.components.CheckBox;
+import haxe.ui.components.TextField;
+import haxe.ui.components.NumberStepper;
+
+import haxe.ui.containers.Box;
+import haxe.ui.containers.HBox;
+import haxe.ui.containers.Header;
+import haxe.ui.containers.TabView;
+import haxe.ui.containers.ListView;
+import haxe.ui.containers.TableView;
+import haxe.ui.containers.menus.Menu;
+import haxe.ui.containers.menus.MenuBar;
+import haxe.ui.containers.dialogs.Dialog;
+import haxe.ui.containers.windows.Window;
+import haxe.ui.containers.menus.MenuItem;
+import haxe.ui.containers.menus.MenuCheckBox;
+import haxe.ui.containers.menus.MenuOptionBox;
+import haxe.ui.containers.menus.MenuSeparator;
+import haxe.ui.containers.windows.WindowManager;
+import flixel.text.FlxText;
+
+import funkin.ui.MusicBeatState;
+
+import haxe.ui.data.ArrayDataSource;
+
+import haxe.ui.macros.ComponentMacros;
+
+import openfl.net.URLLoader;
+import openfl.net.URLRequest;
+
+import haxe.io.BytesInput;
+import haxe.zip.Reader;
+import haxe.zip.Uncompress;
+
+import openfl.net.FileReference;
+import openfl.display.BitmapData;
+import funkin.util.FileUtil;
+import funkin.util.ReflectUtil;
+import haxe.io.Bytes;
+import Std;
+
+import funkin.ui.debug.charting.ChartEditorState;
+
+import funkin.input.Cursor;
+
+import funkin.modding.module.ModuleHandler;
+
+import funkin.modding.PolymodHandler;
+
+import funkin.modding.module.Module;
+
+import funkin.modding.base.ScriptedFlxRuntimeShader;
+import funkin.audio.FunkinSound;
+
+import funkin.util.MathUtil;
+import funkin.ui.mainmenu.MainMenuState;
+
+//import haxe.Http;
+
+class NovaDownloaderState extends MusicBeatState {
+
+    var currentFolder = "???";
+
+    var stateData;
+
+    var bgs = [];
+    var items = [];
+
+    var installedTools = [];
+
+    var currentItem;
+
+    function new() {
+        super('NovaDownloaderState');
+    }
+
+    function deleteDirectory(path) {
+        if (!FileUtil.directoryExists(path)) return;
+		var subObjects = FileUtil.readDir(path);
+		for (i in subObjects) {
+			if (!StringTools.contains(i, ".")) {
+				deleteDirectory(path + "/" + i);
+			} else {
+				FileUtil.deleteFile(path + "/" + i);
+			}
+		}
+		FileUtil.deleteDir(path);
+	}
+
+    function downloadMod(item) {
+        var loader = new URLLoader();
+        loader.dataFormat = 0;
+		loader.addEventListener("complete", ()->{
+			deleteDirectory("mods/Nova " + currentItem.name);
+			//FileUtil.deleteDir(currentFolder);
+			var bytesInput = new BytesInput(loader.data);
+			var reader = new Reader(bytesInput);
+			var entries = reader.read();
+			for(_entry in entries) {
+				var data = Reader.unzip(_entry);
+				if (data + "" != "") {
+                    var splited = _entry.fileName.split("/");
+					var fileName = StringTools.replace(_entry.fileName, splited[0] + "/", "");
+					FileUtil.writeBytesToPath("mods/Nova " + currentItem.name + "/" + fileName, data);
+				}
+			}
+		});
+		loader.load(new URLRequest(item.download));
+    }
+
+    public function parseJsonString(str:String) {
+		return Json.parse(str);
+	}
+
+	public function parseJsonFile(path:String) {
+		var daString = FileUtil.readStringFromPath(path);
+		if (daString == null || daString == "") {
+			return null;
+		} else {
+			return parseJsonString(daString);
+		}
+	}
+
+	function openSound() {
+		FunkinSound.playOnce(Paths.sound("chartingSounds/openWindow"), 1);
+	}
+
+    function create() {
+        super.create();
+		Cursor.show();
+
+        //NListUtil = new Module("NListUtil");
+        //trace(NListUtil);
+        
+
+        
+        for (mod in PolymodHandler.getAllMods()) {
+			var meta = parseJsonFile("mods/" + mod.id + "/_polymod_meta.json");
+			if (meta.title == "Nova Tool Downloader") {
+				currentFolder = "mods/" + mod.id;
+				break;
+			}
+		}
+
+        stateData = parseJsonFile(currentFolder + "/data/toolList.json");
+        for (category in stateData) {
+            for (i in category.items) {
+                items.push(i);
+            }
+        }
+        for (mod in PolymodHandler.getAllMods()) {
+			var meta = parseJsonFile("mods/" + mod.id + "/_polymod_meta.json");
+            for (i in items) {
+                trace(meta.title, i.name);
+                if ("Nova " + i.name == meta.title) {
+                    installedTools.push(i.name);
+                }
+            }
+        }
+        trace(installedTools);
+
+        var chartEditor = new ChartEditorState(); // To Fix UI Font.
+
+        FlxG.camera.bgColor = 0xFF2B2C2E;
+
+        // UI Stuff \\
+        var topBar = new MenuBar();
+		topBar.width = FlxG.width;
+		//topBar.height = 50;
+		add(topBar);
+
+        var fileMenu = new Menu();
+		fileMenu.text = "File";
+        topBar.addComponent(fileMenu);
+
+        var exitToMenu = new MenuItem();
+        exitToMenu.text = "Exit To Menu";
+        exitToMenu.onClick = ()->{
+            PolymodHandler.forceReloadAssets();
+            FlxG.switchState(new MainMenuState());
+        }
+        fileMenu.addComponent(exitToMenu);
+
+
+        var novaSprite = new FunkinSprite().loadGraphic(Paths.image("ui/novaUtilsFull"));
+        novaSprite.scale.set(0.2, 0.2);
+        novaSprite.updateHitbox();
+        novaSprite.screenCenter();
+        novaSprite.y = 50;
+        add(novaSprite);
+
+        var index = 0;
+        for (category in stateData) {
+            var catText = new FlxText();
+            catText.text = category.title;
+            catText.setFormat(Paths.font('Tardling v1.1.ttf'));
+            catText.size = 30;
+            catText.antialiasing = true;
+            catText.screenCenter();
+            catText.y = (180 * index) + 150;
+            add(catText);
+            var itemID = 0;
+            for (i in category.items) {
+                var len = category.items.length-1;
+                var novaSprite = new FunkinSprite().loadGraphic(Paths.image("ui/icons/" + (i.icon != null ? i.icon : "utils")));
+                novaSprite.scale.set(0.4, 0.4);
+                novaSprite.updateHitbox();
+                novaSprite.screenCenter();
+                novaSprite.y = catText.y + 30;
+                novaSprite.x += (novaSprite.width + 20) * (itemID - (len/2));
+
+                var bg = new FunkinSprite(novaSprite.x, novaSprite.y).makeGraphic(novaSprite.width, novaSprite.height-10, 0xFF000000);
+                bg.alpha = 0;
+                bgs.push(bg);
+                add(bg);
+
+                add(novaSprite);
+
+                
+                itemID++;
+            }
+            index++;
+        }
+    }
+
+    var nextInput = false;
+
+    var infoWindow;
+
+    function update(elapsed) {
+        super.update(elapsed);
+        for (i in bgs) {
+            var index = bgs.indexOf(i);
+            i.alpha = MathUtil.coolLerp(i.alpha, FlxG.mouse.overlaps(i) ? 0.5 : 0, 0.5);
+            if (FlxG.mouse.overlaps(i) && FlxG.mouse.justPressed) {
+                if (infoWindow == null || !infoWindow.visible) {
+                    var curItem = items[index];
+                    infoWindow = new Window();
+                    infoWindow.windowManager = new WindowManager();
+                    infoWindow.maximizable = false;
+                    infoWindow.minimizable = false;
+                    infoWindow.collapsable = false;
+                    infoWindow.draggable = false;
+                    infoWindow.title = curItem.name;
+                    infoWindow.width = 400;
+                    infoWindow.height = 300;
+                    infoWindow.screenCenter();
+                    add(infoWindow);
+
+                    var description = new Label();
+                    description.width = 480;
+                    description.text = curItem.description;
+                    infoWindow.addComponent(description);
+
+                    if (!curItem.comingSoon) {
+                        description.text += "\n\nLatest: " + curItem.latest;
+                    } else {
+                        description.text += "\n\nComing Soon!";
+                    }
+
+                    var buttonBox = new HBox();
+                    buttonBox.marginTop = 10;
+                    //buttonBox.screenCenter();
+
+                    if (!curItem.comingSoon) {
+                        var downloadButton = new Button();
+                        downloadButton.height = 25;
+                        downloadButton.text = "   " + (!installedTools.contains(curItem.name) ? "Download" : "Uninstall");
+    
+                        var downloadSprite = new FunkinSprite(12, 6).loadGraphic(Paths.image("ui/downloadIcon"));
+                        downloadSprite.setGraphicSize(12, 12);
+                        downloadSprite.updateHitbox();
+                        if (installedTools.contains(curItem.name)) {
+                            downloadSprite.color = 0xFFFF0000;
+                            downloadSprite.flipY = true;
+                        }
+                        downloadButton.add(downloadSprite);
+                        downloadButton.onClick = ()-> {
+                            currentItem = curItem;
+                            if (installedTools.contains(curItem.name)) {
+                                installedTools.remove(curItem.name);
+                                downloadButton.text = "   Download";
+                                downloadSprite.color = 0xFFFFFFFF;
+                                downloadSprite.flipY = false;
+		                        FunkinSound.playOnce(Paths.sound("chartingSounds/noteErase"), 1);
+                                var folderToDelete;
+                                for (mod in PolymodHandler.getAllMods()) {
+                                    var meta = parseJsonFile("mods/" + mod.id + "/_polymod_meta.json");
+                                    if (meta.title == "Nova " + curItem.name) {
+                                        folderToDelete = "mods/" + mod.id;
+                                        break;
+                                    }
+                                }
+			                    deleteDirectory(folderToDelete);
+                            } else {
+                                installedTools.push(curItem.name);
+                                downloadButton.text = "   Uninstall";
+                                downloadSprite.color = 0xFFFF0000;
+                                downloadSprite.flipY = true;
+		                        FunkinSound.playOnce(Paths.sound("chartingSounds/noteLay"), 1);
+                                downloadMod(curItem);
+                            }
+                        };
+                        buttonBox.addComponent(downloadButton);
+                        infoWindow.addComponent(buttonBox);
+                    }
+
+
+                    openSound();
+                } else {
+                    infoWindow.windowManager.closeWindow(infoWindow);
+                }
+            }
+        }
+    }
+
+    function destroy() {
+        super.destroy();
+        Cursor.hide();
+    }
+
+}

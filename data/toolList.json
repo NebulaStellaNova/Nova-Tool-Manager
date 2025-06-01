@@ -1,0 +1,51 @@
+[
+    {
+        "title": "Editors",
+        "items": [
+            {
+                "name": "Stage Editor",
+                "icon": "stageEditor",
+                "latest": "v0.1.3",
+                "description": "A functional stage editor.",
+                "download": "https://codeload.github.com/NebulaStellaNova/Nova-Stage-Editor/zip/refs/heads/main"
+            },
+            {
+                "name": "Character Editor REFRESHED - PRELEASE",
+                "icon": "characterEditor",
+                "latest": "v0.1.0",
+                "description": "A functional character editor.",
+                "download": "https://codeload.github.com/NebulaStellaNova/Nova-Character-Editor/zip/refs/heads/main"
+            }
+        ]
+    },
+    {
+        "title": "Scripting",
+        "items": [
+            {
+                "name": "Python Parser",
+                "icon": "pythonScript",
+                "latest": "v0.1.0",
+                "description": "Python based scripting.",
+                "download": "https://codeload.github.com/NebulaStellaNova/Nova-Python-Runner/zip/refs/heads/main"
+            },
+            {
+                "name": "HScript Parser",
+                "icon": "codenameScript",
+                "latest": "v0.1.0",
+                "description": "CNE Style HScript based scripting.",
+                "download": "https://codeload.github.com/NebulaStellaNova/Nova-CNE-V-Slice/zip/refs/heads/main"
+            }
+        ]
+    },
+    {
+        "title": "Downloaders",
+        "items": [
+            {
+                "name": "Gamebanana Browser",
+                "icon": "gamebanana",
+                "description": "A Gamebanana browser built into the game.",
+                "comingSoon": true
+            }
+        ]
+    }
+]
